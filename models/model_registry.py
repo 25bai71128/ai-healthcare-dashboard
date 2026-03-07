@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,11 +21,47 @@ except Exception:  # pragma: no cover - optional dependency
     shap = None
 
 LOGGER = logging.getLogger(__name__)
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-TRAINED_MODELS_DIR = Path(__file__).resolve().parent / "trained_models"
-METADATA_DIR = Path(__file__).resolve().parent / "metadata"
-ACTIVE_VERSIONS_FILE = Path(__file__).resolve().parent / "active_versions.json"
-DATASET_PATH = PROJECT_ROOT / "data" / "health_data.csv"
+MODULE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = MODULE_DIR.parent
+IS_VERCEL = os.environ.get("VERCEL", "").strip().lower() in {"1", "true", "yes", "on"}
+RUNTIME_ROOT = Path(os.environ.get("APP_RUNTIME_DIR", "/tmp/ai_healthcare_project"))
+DEFAULT_DATASET_PATH = PROJECT_ROOT / "data" / "health_data.csv"
+DATASET_PATH = Path(os.environ.get("DATASET_PATH", str(DEFAULT_DATASET_PATH)))
+
+
+def _default_models_dir() -> Path:
+    configured = os.environ.get("TRAINED_MODELS_DIR", "").strip()
+    if configured:
+        return Path(configured)
+    if IS_VERCEL:
+        packaged = MODULE_DIR / "trained_models"
+        runtime = RUNTIME_ROOT / "models" / "trained_models"
+        return packaged if any(packaged.glob("*.pkl")) else runtime
+    return MODULE_DIR / "trained_models"
+
+
+def _default_metadata_dir() -> Path:
+    configured = os.environ.get("METADATA_DIR", "").strip()
+    if configured:
+        return Path(configured)
+    if IS_VERCEL:
+        packaged = MODULE_DIR / "metadata"
+        runtime = RUNTIME_ROOT / "models" / "metadata"
+        return packaged if packaged.exists() else runtime
+    return MODULE_DIR / "metadata"
+
+
+def _default_active_versions_file(metadata_dir: Path) -> Path:
+    configured = os.environ.get("ACTIVE_VERSIONS_FILE", "").strip()
+    if configured:
+        return Path(configured)
+    packaged = MODULE_DIR / "active_versions.json"
+    runtime = RUNTIME_ROOT / "models" / "active_versions.json"
+    if IS_VERCEL and packaged.exists() and metadata_dir == MODULE_DIR / "metadata":
+        return packaged
+    if IS_VERCEL:
+        return runtime
+    return packaged
 
 DEFAULT_FEATURES = ["age", "blood_pressure", "cholesterol"]
 DEFAULT_TARGET = "diabetes_risk"
@@ -66,8 +103,9 @@ class ModelRegistry:
     """Registry that auto-discovers models and exposes active predictions."""
 
     def __init__(self, models_dir: Path | None = None, metadata_dir: Path | None = None) -> None:
-        self.models_dir = models_dir or TRAINED_MODELS_DIR
-        self.metadata_dir = metadata_dir or METADATA_DIR
+        self.models_dir = models_dir or _default_models_dir()
+        self.metadata_dir = metadata_dir or _default_metadata_dir()
+        self.active_versions_file = _default_active_versions_file(self.metadata_dir)
         self.models_by_family: dict[str, dict[str, ModelBundle]] = {}
         self.active_versions: dict[str, str] = {}
         self._load_status: dict[str, str] = {}
@@ -184,7 +222,10 @@ class ModelRegistry:
         """Run predictions across currently active model family versions."""
         active_models = self.get_models()
         if not active_models:
-            raise RuntimeError("No active models available. Add valid .pkl files under models/trained_models/.")
+            raise RuntimeError(
+                "No active models available. Add valid .pkl files under models/trained_models/ "
+                "or configure MODEL_ARCHIVE_URL / MODEL_FILE_URL for runtime sync."
+            )
 
         predictions: dict[str, dict[str, Any]] = {}
         for family, bundle in active_models.items():
@@ -232,10 +273,10 @@ class ModelRegistry:
 
     def _load_active_versions(self) -> dict[str, str]:
         """Load persisted active-version map."""
-        if not ACTIVE_VERSIONS_FILE.exists():
+        if not self.active_versions_file.exists():
             return {}
         try:
-            content = json.loads(ACTIVE_VERSIONS_FILE.read_text(encoding="utf-8"))
+            content = json.loads(self.active_versions_file.read_text(encoding="utf-8"))
             if isinstance(content, dict):
                 return {str(k): str(v) for k, v in content.items()}
         except Exception:  # pragma: no cover
@@ -245,7 +286,8 @@ class ModelRegistry:
     def _save_active_versions(self) -> None:
         """Persist active-version map for rollback support."""
         try:
-            ACTIVE_VERSIONS_FILE.write_text(json.dumps(self.active_versions, indent=2), encoding="utf-8")
+            self.active_versions_file.parent.mkdir(parents=True, exist_ok=True)
+            self.active_versions_file.write_text(json.dumps(self.active_versions, indent=2), encoding="utf-8")
         except OSError as exc:
             LOGGER.warning("Unable to persist active model versions: %s", exc)
 

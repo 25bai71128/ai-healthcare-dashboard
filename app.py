@@ -39,7 +39,10 @@ BASE_DIR = Path(__file__).resolve().parent
 IS_VERCEL = os.environ.get("VERCEL", "").strip().lower() in {"1", "true", "yes", "on"}
 WRITABLE_BASE_DIR = Path(os.environ.get("APP_RUNTIME_DIR", "/tmp/ai_healthcare_project")) if IS_VERCEL else BASE_DIR
 
-MODELS_DIR = BASE_DIR / "models"
+PACKAGED_MODELS_DIR = BASE_DIR / "models"
+RUNTIME_MODELS_DIR = WRITABLE_BASE_DIR / "models"
+HAS_PACKAGED_MODELS = any((PACKAGED_MODELS_DIR / "trained_models").glob("*.pkl"))
+MODELS_DIR = PACKAGED_MODELS_DIR if (not IS_VERCEL or HAS_PACKAGED_MODELS) else RUNTIME_MODELS_DIR
 DATA_DIR = WRITABLE_BASE_DIR / "data"
 REPORTS_DIR = WRITABLE_BASE_DIR / "reports"
 LOGS_DIR = WRITABLE_BASE_DIR / "logs"
@@ -84,7 +87,8 @@ if not PREDICTION_LOGGER.handlers:
         LOGGER.warning("Failed to initialize prediction file logger: %s", exc)
     PREDICTION_LOGGER.setLevel(logging.INFO)
 
-synced_artifacts = sync_external_artifacts(BASE_DIR, logger=LOGGER)
+artifact_base_dir = WRITABLE_BASE_DIR if IS_VERCEL else BASE_DIR
+synced_artifacts = sync_external_artifacts(artifact_base_dir, logger=LOGGER)
 if synced_artifacts:
     LOGGER.info("External artifacts prepared: %s", ", ".join(synced_artifacts))
 
@@ -139,7 +143,11 @@ def _compute_registry_signature() -> tuple[tuple[str, int], ...]:
     for folder in (MODELS_DIR / "trained_models", MODELS_DIR / "metadata"):
         for file in sorted(folder.glob("*")):
             if file.is_file():
-                tracked.append((str(file.relative_to(BASE_DIR)), int(file.stat().st_mtime_ns)))
+                try:
+                    key = str(file.relative_to(BASE_DIR))
+                except ValueError:
+                    key = str(file)
+                tracked.append((key, int(file.stat().st_mtime_ns)))
     return tuple(tracked)
 
 
