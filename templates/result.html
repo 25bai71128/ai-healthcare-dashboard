@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Compatibility result page; dashboard is the primary experience -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prediction Result</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-bg">
+  <main class="container py-5">
+    <div class="card premium-card border-0">
+      <div class="card-body p-4 p-md-5 text-center">
+        {% if result %}
+          <h1 class="h4 fw-bold mb-3">Latest Prediction Available</h1>
+          <p class="mb-2">Global Score: <strong>{{ result.global_score.risk_percent }}%</strong></p>
+          <p class="mb-4">Risk Level: <span class="badge text-bg-{{ result.global_score.risk_class }}">{{ result.global_score.risk_level }}</span></p>
+          <a class="btn btn-primary" href="/dashboard">Open Dashboard</a>
+        {% else %}
+          <h1 class="h4 fw-bold mb-3">No Prediction Found</h1>
+          <p class="text-muted mb-4">Submit patient data first to generate a result.</p>
+          <a class="btn btn-outline-primary" href="/">Go to Input Form</a>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "model_name": "Diabetes Model",
+  "description": "Auto-generated metadata for integrated model.",
+  "features": [
+    "age",
+    "blood_pressure",
+    "cholesterol"
+  ],
+  "weight": 0.3
+}
