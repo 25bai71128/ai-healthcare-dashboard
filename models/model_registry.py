@@ -74,12 +74,18 @@ class ModelRegistry:
 
     def load_models(self) -> dict[str, str]:
         """Load all models, validate metadata contract, and activate model versions."""
-        self.models_dir.mkdir(parents=True, exist_ok=True)
-        self.metadata_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.models_dir.mkdir(parents=True, exist_ok=True)
+            self.metadata_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            LOGGER.warning("Model directories are not writable: %s", exc)
 
         self.models_by_family.clear()
         self._load_status.clear()
-        self._bootstrap_if_empty()
+        try:
+            self._bootstrap_if_empty()
+        except OSError as exc:
+            LOGGER.warning("Skipping fallback model bootstrap due to filesystem permissions: %s", exc)
         self.active_versions = self._load_active_versions()
 
         for model_file in sorted(self.models_dir.glob("*.pkl")):
@@ -238,7 +244,10 @@ class ModelRegistry:
 
     def _save_active_versions(self) -> None:
         """Persist active-version map for rollback support."""
-        ACTIVE_VERSIONS_FILE.write_text(json.dumps(self.active_versions, indent=2), encoding="utf-8")
+        try:
+            ACTIVE_VERSIONS_FILE.write_text(json.dumps(self.active_versions, indent=2), encoding="utf-8")
+        except OSError as exc:
+            LOGGER.warning("Unable to persist active model versions: %s", exc)
 
     def _resolve_active_versions(self) -> None:
         """Ensure every family has an active version, defaulting to latest."""
@@ -439,7 +448,10 @@ class ModelRegistry:
                 "metrics": {"auc": 0.0, "f1": 0.0},
                 "thresholds": {"medium": 0.40, "high": 0.70},
             }
-            meta_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+            try:
+                meta_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+            except OSError as exc:
+                LOGGER.warning("Unable to persist generated metadata for %s: %s", model_key, exc)
 
         metadata.setdefault("model_name", model_key.replace("_", " ").title())
         metadata.setdefault("description", "No description available.")
@@ -515,7 +527,10 @@ class ModelRegistry:
                 "metrics": {"auc": 0.84, "f1": 0.79},
                 "thresholds": {"medium": 0.40, "high": 0.70},
             }
-            meta_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+            try:
+                meta_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+            except OSError as exc:
+                LOGGER.warning("Unable to persist fallback metadata: %s", exc)
 
         LOGGER.info("Bootstrapped fallback model: %s", model_path)
 

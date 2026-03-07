@@ -16,7 +16,13 @@ except Exception:  # pragma: no cover - optional dependency
     psycopg2 = None
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SQLITE_PATH = PROJECT_ROOT / "data" / "predictions.db"
+IS_VERCEL = os.environ.get("VERCEL", "").strip().lower() in {"1", "true", "yes", "on"}
+DEFAULT_SQLITE_PATH = Path(
+    os.environ.get(
+        "PREDICTIONS_SQLITE_PATH",
+        "/tmp/ai_healthcare_project/data/predictions.db" if IS_VERCEL else str(PROJECT_ROOT / "data" / "predictions.db"),
+    )
+)
 
 
 @dataclass
@@ -39,7 +45,12 @@ class PredictionStore:
         self.database_url = database_url or os.environ.get("DATABASE_URL", "")
         self.use_postgres = self.database_url.startswith("postgresql") and psycopg2 is not None
         self.sqlite_path = DEFAULT_SQLITE_PATH
-        self.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            fallback = Path("/tmp/ai_healthcare_project/data/predictions.db")
+            fallback.parent.mkdir(parents=True, exist_ok=True)
+            self.sqlite_path = fallback
         self._init_db()
 
     def _connect_sqlite(self) -> sqlite3.Connection:

@@ -36,28 +36,38 @@ from storage.external_assets import sync_external_artifacts
 from storage.prediction_store import PredictionStore, build_record
 
 BASE_DIR = Path(__file__).resolve().parent
+IS_VERCEL = os.environ.get("VERCEL", "").strip().lower() in {"1", "true", "yes", "on"}
+WRITABLE_BASE_DIR = Path(os.environ.get("APP_RUNTIME_DIR", "/tmp/ai_healthcare_project")) if IS_VERCEL else BASE_DIR
+
 MODELS_DIR = BASE_DIR / "models"
-DATA_DIR = BASE_DIR / "data"
-REPORTS_DIR = BASE_DIR / "reports"
-LOGS_DIR = BASE_DIR / "logs"
+DATA_DIR = WRITABLE_BASE_DIR / "data"
+REPORTS_DIR = WRITABLE_BASE_DIR / "reports"
+LOGS_DIR = WRITABLE_BASE_DIR / "logs"
 STATIC_DIR = BASE_DIR / "static"
 STATIC_CSS_DIR = STATIC_DIR / "css"
 STATIC_JS_DIR = STATIC_DIR / "js"
 TEMPLATES_DIR = BASE_DIR / "templates"
 
+def _safe_mkdir(path: Path) -> None:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logging.getLogger("ai_healthcare_app").warning("Skipping directory creation for %s: %s", path, exc)
+
+
 for folder in (
-    MODELS_DIR,
-    MODELS_DIR / "trained_models",
-    MODELS_DIR / "metadata",
     DATA_DIR,
     REPORTS_DIR,
     LOGS_DIR,
+    MODELS_DIR,
+    MODELS_DIR / "trained_models",
+    MODELS_DIR / "metadata",
     STATIC_DIR,
     STATIC_CSS_DIR,
     STATIC_JS_DIR,
     TEMPLATES_DIR,
 ):
-    folder.mkdir(parents=True, exist_ok=True)
+    _safe_mkdir(folder)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -66,9 +76,12 @@ logging.basicConfig(
 LOGGER = logging.getLogger("ai_healthcare_app")
 PREDICTION_LOGGER = logging.getLogger("prediction_audit")
 if not PREDICTION_LOGGER.handlers:
-    file_handler = logging.FileHandler(LOGS_DIR / "predictions.log")
-    file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
-    PREDICTION_LOGGER.addHandler(file_handler)
+    try:
+        file_handler = logging.FileHandler(LOGS_DIR / "predictions.log")
+        file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
+        PREDICTION_LOGGER.addHandler(file_handler)
+    except OSError as exc:
+        LOGGER.warning("Failed to initialize prediction file logger: %s", exc)
     PREDICTION_LOGGER.setLevel(logging.INFO)
 
 synced_artifacts = sync_external_artifacts(BASE_DIR, logger=LOGGER)
@@ -78,6 +91,7 @@ if synced_artifacts:
 MODEL_LOAD_STATUS: dict[str, str] = {}
 MODEL_REGISTRY_SIGNATURE: tuple[tuple[str, int], ...] = ()
 
+os.environ.setdefault("PREDICTIONS_SQLITE_PATH", str(DATA_DIR / "predictions.db"))
 PREDICTION_STORE = PredictionStore()
 TASK_QUEUE = TaskQueue(workers=2)
 
