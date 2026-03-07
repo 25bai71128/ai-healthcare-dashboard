@@ -9,3 +9,10 @@ models/*.joblib
 static/*.png
 *.ipynb
 venv/
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local

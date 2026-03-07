@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLINICIAN
+  ADMIN
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  MISSED
+}
+
+enum MedicationStatus {
+  ACTIVE
+  PAUSED
+  STOPPED
+}
+
+enum AdherenceStatus {
+  TAKEN
+  MISSED
+  SKIPPED
+}
+
+enum LabStatus {
+  NORMAL
+  ABNORMAL
+  CRITICAL
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         UserRole  @default(CLINICIAN)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  patients     Patient[]
+}
+
+model Patient {
+  id               String          @id @default(cuid())
+  ownerId          String
+  owner            User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  fullName         String
+  dateOfBirth      DateTime?
+  conditionSummary String?
+  sensitiveNotes   String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  appointments     Appointment[]
+  medications      Medication[]
+  medicationLogs   MedicationLog[]
+  vitals           Vital[]
+  labResults       LabResult[]
+
+  @@index([ownerId])
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  patientId String
+  patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  startsAt  DateTime
+  endsAt    DateTime?
+  provider  String
+  reason    String
+  status    AppointmentStatus @default(SCHEDULED)
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([patientId, startsAt])
+}
+
+model Medication {
+  id              String           @id @default(cuid())
+  patientId       String
+  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  name            String
+  dosage          String
+  schedule        String
+  nextDoseAt      DateTime
+  lastTakenAt     DateTime?
+  adherencePct    Float            @default(100)
+  status          MedicationStatus @default(ACTIVE)
+  instructions    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  adherenceEvents MedicationLog[]
+
+  @@index([patientId, nextDoseAt])
+}
+
+model MedicationLog {
+  id           String          @id @default(cuid())
+  medicationId String
+  medication   Medication      @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  patientId    String
+  patient      Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scheduledFor DateTime
+  takenAt      DateTime?
+  status       AdherenceStatus
+  note         String?
+  createdAt    DateTime        @default(now())
+
+  @@index([patientId, scheduledFor])
+  @@index([medicationId, scheduledFor])
+}
+
+model Vital {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  measuredAt  DateTime @default(now())
+  heartRate   Int?
+  systolic    Int?
+  diastolic   Int?
+  glucose     Int?
+  oxygenSat   Int?
+  temperature Float?
+  source      String?
+  createdAt   DateTime @default(now())
+
+  @@index([patientId, measuredAt])
+}
+
+model LabResult {
+  id             String    @id @default(cuid())
+  patientId      String
+  patient        Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  takenAt        DateTime
+  testName       String
+  value          String
+  unit           String?
+  referenceRange String?
+  status         LabStatus @default(NORMAL)
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  @@index([patientId, takenAt])
+}

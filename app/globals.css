@@ -1,0 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --panel-soft: #eef4ff;
+  --ink: #0f172a;
+  --muted: #475569;
+  --brand: #0f6bff;
+  --brand-ink: #ffffff;
+  --danger: #c81e1e;
+  --warning: #b45309;
+  --focus: #1d4ed8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(15, 107, 255, 0.08) 0%, transparent 32%),
+    radial-gradient(circle at 100% 20%, rgba(8, 145, 178, 0.09) 0%, transparent 35%),
+    var(--bg);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 50;
+  border-radius: 0.6rem;
+  background: #111827;
+  color: #fff;
+  padding: 0.65rem 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+@layer utilities {
+  .panel {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-card;
+  }
+
+  .panel-soft {
+    @apply rounded-2xl border border-blue-100 bg-[var(--panel-soft)];
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}

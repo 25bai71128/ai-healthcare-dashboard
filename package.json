@@ -2,14 +2,59 @@
   "name": "ai-healthcare-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "Vercel deployment metadata for Python backend",
+  "description": "AI healthcare dashboard with Next.js + Flask services",
   "scripts": {
-    "vercel-build": "echo \"Python serverless build: no Node dependencies required\"",
-    "test": "pytest -q"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:python": "pytest -q",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "vercel-build": "next build"
   },
   "engines": {
     "node": "20.x"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "@tanstack/react-query": "^5.70.0",
+    "@tanstack/react-query-devtools": "^5.70.0",
+    "bcryptjs": "^2.4.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.511.0",
+    "next": "^15.2.2",
+    "next-auth": "^4.24.11",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.1",
+    "tailwind-merge": "^3.3.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.14.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.23.0",
+    "eslint-config-next": "^15.2.2",
+    "postcss": "^8.5.3",
+    "prisma": "^6.6.0",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
 }

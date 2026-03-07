@@ -16,6 +16,83 @@ AI Healthcare Dashboard is a Python/Flask application that combines multiple ris
 
 ---
 
+## Next.js Healthcare Dashboard (Overhaul)
+
+This repository now also includes a full **Next.js App Router** dashboard layer with:
+
+- Critical Alerts panel (upcoming appointments, overdue medications, abnormal vitals)
+- Context-aware AI assistant with medical safety filters and critical advice disclaimer
+- Protected CRUD API routes for appointments, medications, vitals, and lab results
+- PostgreSQL/Supabase integration via Prisma
+- JWT auth with NextAuth credentials provider (email/password)
+- Encrypted sensitive DB fields (AES-256-GCM)
+- Responsive analytics charts and longitudinal timeline
+- React Query state management + polling for near real-time updates
+
+### Next.js Quick Start
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Configure environment:
+
+```bash
+cp .env.example .env.local
+```
+
+Set at minimum:
+
+- `DATABASE_URL` (PostgreSQL/Supabase connection)
+- `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL` (typically `http://localhost:3000`)
+- `FIELD_ENCRYPTION_KEY` (base64 32-byte key)
+
+3. Generate Prisma client + migrate + seed:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate -- --name init_dashboard
+npm run prisma:seed
+```
+
+4. Start the Next.js dashboard:
+
+```bash
+npm run dev
+```
+
+5. Open:
+
+`http://localhost:3000/login`
+
+Use the seed credentials from `.env.local`:
+
+- `SEED_USER_EMAIL`
+- `SEED_USER_PASSWORD`
+
+### API Surface (Next.js)
+
+- `GET/POST /api/appointments`
+- `GET/PATCH/DELETE /api/appointments/:id`
+- `GET/POST /api/medications`
+- `GET/PATCH/DELETE /api/medications/:id`
+- `GET/POST /api/vitals`
+- `GET/PATCH/DELETE /api/vitals/:id`
+- `GET/POST /api/labs`
+- `GET/PATCH/DELETE /api/labs/:id`
+- `GET /api/alerts`
+- `GET /api/analytics`
+- `GET /api/timeline`
+- `POST /api/assistant`
+- `GET /api/profile`
+
+All patient-data routes require authentication and ownership checks.
+
+---
+
 ## 🚀 Features
 
 - **Multi‑model ensemble scoring** using a model registry (`models/model_registry.py`) with version control
