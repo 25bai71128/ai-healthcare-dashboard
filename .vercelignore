@@ -1,0 +1,32 @@
+# VCS and CI metadata
+.git/
+.github/
+
+# Python caches and local environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Local-only data and generated artifacts
+data/
+logs/
+reports/
+models/trained_models/
+models/metadata/
+models/*.joblib
+health_report.pdf
+static/*.png
+
+# Notebooks and tests
+tests/
+*.ipynb
+
+# Docker and local tooling
+Dockerfile
+docker-compose.yml
+
+# Node artifacts
+node_modules/

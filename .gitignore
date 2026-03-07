@@ -1,4 +1,11 @@
 __pycache__/
 *.pyc
 data/
+logs/
+reports/
+models/trained_models/
+models/metadata/
+models/*.joblib
+static/*.png
+*.ipynb
 venv/

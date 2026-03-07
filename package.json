@@ -1,0 +1,15 @@
+{
+  "name": "ai-healthcare-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vercel deployment metadata for Python backend",
+  "scripts": {
+    "vercel-build": "echo \"Python serverless build: no Node dependencies required\"",
+    "test": "pytest -q"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

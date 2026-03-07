@@ -8,12 +8,10 @@ import os
 import tempfile
 import uuid
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from flask import Flask, g, jsonify, redirect, render_template, request, send_file, session, url_for
 
 from jobs.task_queue import TaskQueue
@@ -26,7 +24,6 @@ from models.model_registry import (
     predict_all,
     set_active_model_version,
 )
-from models.report_generator import generate_report
 from monitoring.drift_monitor import assess_prediction
 from security.security_utils import (
     api_key_required,
@@ -35,6 +32,7 @@ from security.security_utils import (
     role_required,
     setup_security,
 )
+from storage.external_assets import sync_external_artifacts
 from storage.prediction_store import PredictionStore, build_record
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -73,6 +71,10 @@ if not PREDICTION_LOGGER.handlers:
     PREDICTION_LOGGER.addHandler(file_handler)
     PREDICTION_LOGGER.setLevel(logging.INFO)
 
+synced_artifacts = sync_external_artifacts(BASE_DIR, logger=LOGGER)
+if synced_artifacts:
+    LOGGER.info("External artifacts prepared: %s", ", ".join(synced_artifacts))
+
 MODEL_LOAD_STATUS: dict[str, str] = {}
 MODEL_REGISTRY_SIGNATURE: tuple[tuple[str, int], ...] = ()
 
@@ -87,6 +89,34 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "f
 
 SECURITY_COMPONENTS = setup_security(app)
 CSRF = SECURITY_COMPONENTS.get("csrf")
+
+
+def _is_truthy(value: str | None, default: bool = False) -> bool:
+    """Parse a boolean-like environment variable value."""
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _reports_enabled() -> bool:
+    """Enable report generation outside Vercel unless overridden."""
+    if "ENABLE_REPORTS" in os.environ:
+        return _is_truthy(os.environ.get("ENABLE_REPORTS"), default=False)
+    # Keep serverless cold start light by default on Vercel.
+    return not _is_truthy(os.environ.get("VERCEL"), default=False)
+
+
+@lru_cache(maxsize=1)
+def _load_pyplot():
+    """Load matplotlib lazily so API-only calls avoid heavy imports."""
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as pyplot
+    except Exception as exc:  # pragma: no cover - depends on optional runtime extras
+        raise RuntimeError("Matplotlib is not installed. Install requirements-optional.txt or disable reports.") from exc
+    return pyplot
 
 
 def _compute_registry_signature() -> tuple[tuple[str, int], ...]:
@@ -144,6 +174,23 @@ def _parse_int(data: dict[str, Any], field_name: str, label: str, min_value: int
     if value < min_value or value > max_value:
         raise ValueError(f"{label} must be between {min_value} and {max_value}.")
     return value
+
+
+def _coerce_bool(value: Any, default: bool = False) -> bool:
+    """Coerce JSON/form/query values to boolean."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+    return default
 
 
 def _validate_patient_input(payload: dict[str, Any]) -> dict[str, int]:
@@ -389,18 +436,20 @@ def _atomic_save_figure(fig: Any, out_file: Path, dpi: int = 140) -> str:
         os.replace(tmp.name, out_file)
         return str(out_file)
     finally:
+        pyplot = _load_pyplot()
         tmp.close()
         if os.path.exists(tmp.name):
             os.remove(tmp.name)
-        plt.close(fig)
+        pyplot.close(fig)
 
 
 def _generate_patient_chart(patient_data: dict[str, int]) -> str:
     """Generate patient indicator chart for reports."""
+    pyplot = _load_pyplot()
     labels = ["Age", "Blood Pressure", "Cholesterol"]
     values = [patient_data["age"], patient_data["blood_pressure"], patient_data["cholesterol"]]
 
-    fig, ax = plt.subplots(figsize=(6.5, 3.8))
+    fig, ax = pyplot.subplots(figsize=(6.5, 3.8))
     ax.bar(labels, values, color=["#2563eb", "#10b981", "#f59e0b"])
     ax.set_title("Patient Indicators")
     ax.set_ylabel("Value")
@@ -410,10 +459,11 @@ def _generate_patient_chart(patient_data: dict[str, int]) -> str:
 
 def _generate_prediction_comparison_chart(model_predictions: dict[str, dict[str, Any]]) -> str:
     """Generate model comparison chart for reports."""
+    pyplot = _load_pyplot()
     labels = [entry["metadata"]["model_name"] for entry in model_predictions.values()]
     values = [entry["risk_percent"] for entry in model_predictions.values()]
 
-    fig, ax = plt.subplots(figsize=(7.2, 4.0))
+    fig, ax = pyplot.subplots(figsize=(7.2, 4.0))
     ax.barh(labels, values, color="#2563eb")
     ax.set_xlim(0, 100)
     ax.set_xlabel("Risk %")
@@ -424,10 +474,11 @@ def _generate_prediction_comparison_chart(model_predictions: dict[str, dict[str,
 
 def _generate_risk_breakdown_chart(health_score: dict[str, Any]) -> str:
     """Generate risk breakdown pie chart for reports."""
+    pyplot = _load_pyplot()
     risk = float(health_score["overall_health_score"])
     safe_margin = max(0.0, 100.0 - risk)
 
-    fig, ax = plt.subplots(figsize=(4.6, 4.6))
+    fig, ax = pyplot.subplots(figsize=(4.6, 4.6))
     ax.pie(
         [risk, safe_margin],
         labels=["Risk", "Healthy Margin"],
@@ -440,11 +491,12 @@ def _generate_risk_breakdown_chart(health_score: dict[str, Any]) -> str:
 
 def _generate_feature_impact_chart(feature_impacts: list[dict[str, Any]]) -> str:
     """Generate feature impact summary chart for reports."""
+    pyplot = _load_pyplot()
     labels = [item["label"] for item in feature_impacts[:6]] or ["No Data"]
     values = [item["impact_percent"] for item in feature_impacts[:6]] or [0.0]
     colors = ["#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"][: len(labels)]
 
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    fig, ax = pyplot.subplots(figsize=(7.2, 3.8))
     ax.barh(labels, values, color=colors)
     ax.set_xlabel("Cumulative Impact %")
     ax.set_title("Top Feature Impact Summary")
@@ -454,12 +506,13 @@ def _generate_feature_impact_chart(feature_impacts: list[dict[str, Any]]) -> str
 
 def _generate_model_weight_risk_chart(model_predictions: dict[str, dict[str, Any]]) -> str:
     """Generate scatter visualization for model weight vs risk contribution."""
+    pyplot = _load_pyplot()
     names = [entry["metadata"]["model_name"] for entry in model_predictions.values()]
     weights = [float(entry.get("weight", 0.0)) for entry in model_predictions.values()]
     risks = [float(entry.get("risk_percent", 0.0)) for entry in model_predictions.values()]
     sizes = [max(120, weight * 800) for weight in weights]
 
-    fig, ax = plt.subplots(figsize=(7.2, 4.0))
+    fig, ax = pyplot.subplots(figsize=(7.2, 4.0))
     scatter = ax.scatter(weights, risks, s=sizes, c=risks, cmap="RdYlGn_r", alpha=0.8, edgecolors="#1f2937")
     for idx, name in enumerate(names):
         ax.annotate(name, (weights[idx], risks[idx]), xytext=(4, 4), textcoords="offset points", fontsize=8)
@@ -474,6 +527,7 @@ def _generate_model_weight_risk_chart(model_predictions: dict[str, dict[str, Any
 
 def _generate_history_trend_chart(history_rows: list[dict[str, Any]]) -> str:
     """Generate historical trend chart from persisted predictions."""
+    pyplot = _load_pyplot()
     recent = list(reversed(history_rows[-20:]))
     if not recent:
         recent = [{"created_at": "n/a", "health_score": {"overall_health_score": 0.0}}]
@@ -482,7 +536,7 @@ def _generate_history_trend_chart(history_rows: list[dict[str, Any]]) -> str:
     scores = [float(row.get("health_score", {}).get("overall_health_score", 0.0)) for row in recent]
     x_points = list(range(len(scores)))
 
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    fig, ax = pyplot.subplots(figsize=(7.2, 3.8))
     ax.plot(x_points, scores, marker="o", color="#2563eb", linewidth=2)
     ax.fill_between(x_points, scores, alpha=0.15, color="#2563eb")
     ax.set_ylim(0, 100)
@@ -532,10 +586,12 @@ def _run_integrated_prediction(
     payload: dict[str, Any],
     request_id: str | None = None,
     persist: bool = True,
-    build_report: bool = True,
+    build_report: bool | None = None,
 ) -> dict[str, Any]:
     """Execute integrated scoring, optional reporting, and optional persistence."""
     request_id = request_id or str(uuid.uuid4())
+    if build_report is None:
+        build_report = _reports_enabled()
     _maybe_reload_models(force=False)
 
     patient_data = _validate_patient_input(payload)
@@ -550,29 +606,37 @@ def _run_integrated_prediction(
     recommendations = _recommendations(health_score["risk_level"])
 
     report_file = ""
+    report_error = ""
     if build_report:
-        history_rows = PREDICTION_STORE.fetch_recent(limit=30)
-        chart_paths = {
-            "patient_chart": _generate_patient_chart(patient_data),
-            "comparison_chart": _generate_prediction_comparison_chart(model_predictions),
-            "risk_breakdown_chart": _generate_risk_breakdown_chart(health_score),
-            "feature_impact_chart": _generate_feature_impact_chart(feature_impacts),
-            "model_weight_risk_chart": _generate_model_weight_risk_chart(model_predictions),
-            "history_trend_chart": _generate_history_trend_chart(history_rows),
-        }
-        report_path = generate_report(
-            patient_data=patient_data,
-            health_score=health_score,
-            model_predictions=model_predictions,
-            result_explanation=result_explanation,
-            precautions=precautions,
-            recommendations=recommendations,
-            monitoring=monitoring,
-            alerts=alerts,
-            feature_impacts=feature_impacts,
-            chart_paths=chart_paths,
-        )
-        report_file = Path(report_path).name
+        try:
+            # Report stack is optional for serverless deployments.
+            from models.report_generator import generate_report
+
+            history_rows = PREDICTION_STORE.fetch_recent(limit=30)
+            chart_paths = {
+                "patient_chart": _generate_patient_chart(patient_data),
+                "comparison_chart": _generate_prediction_comparison_chart(model_predictions),
+                "risk_breakdown_chart": _generate_risk_breakdown_chart(health_score),
+                "feature_impact_chart": _generate_feature_impact_chart(feature_impacts),
+                "model_weight_risk_chart": _generate_model_weight_risk_chart(model_predictions),
+                "history_trend_chart": _generate_history_trend_chart(history_rows),
+            }
+            report_path = generate_report(
+                patient_data=patient_data,
+                health_score=health_score,
+                model_predictions=model_predictions,
+                result_explanation=result_explanation,
+                precautions=precautions,
+                recommendations=recommendations,
+                monitoring=monitoring,
+                alerts=alerts,
+                feature_impacts=feature_impacts,
+                chart_paths=chart_paths,
+            )
+            report_file = Path(report_path).name
+        except Exception as exc:  # pragma: no cover - defensive fallback for optional dependencies
+            report_error = str(exc)
+            LOGGER.warning("Report generation skipped: %s", exc)
 
     result = {
         "request_id": request_id,
@@ -587,6 +651,10 @@ def _run_integrated_prediction(
         "precautions": precautions,
         "recommendations": recommendations,
         "report_file": report_file,
+        "reporting": {
+            "enabled": build_report,
+            "error": report_error,
+        },
         "model_loading_status": MODEL_LOAD_STATUS,
         "model_versions": get_model_versions(),
     }
@@ -641,7 +709,11 @@ def logout():
 def predict():
     """Form endpoint for synchronous integrated prediction."""
     try:
-        result = _run_integrated_prediction(request.form.to_dict(), request_id=g.request_id)
+        result = _run_integrated_prediction(
+            request.form.to_dict(),
+            request_id=g.request_id,
+            build_report=_reports_enabled(),
+        )
         session["latest_result"] = result
         return redirect(url_for("dashboard"))
     except ValueError as exc:
@@ -695,9 +767,13 @@ def api_predict():
     """API endpoint for synchronous or asynchronous prediction."""
     payload = request.get_json(silent=True) or {}
 
-    async_flag = bool(payload.pop("async", False)) or request.args.get("async", "false").lower() in {"1", "true", "yes"}
+    async_flag = _coerce_bool(payload.pop("async", None)) or _coerce_bool(request.args.get("async"), default=False)
+    build_report = _coerce_bool(payload.pop("build_report", None)) or _coerce_bool(
+        request.args.get("build_report"),
+        default=False,
+    )
     if async_flag:
-        job_id = TASK_QUEUE.submit(_run_integrated_prediction, payload, g.request_id)
+        job_id = TASK_QUEUE.submit(_run_integrated_prediction, payload, g.request_id, True, build_report)
         return jsonify(
             {
                 "ok": True,
@@ -708,7 +784,7 @@ def api_predict():
         ), 202
 
     try:
-        result = _run_integrated_prediction(payload, request_id=g.request_id)
+        result = _run_integrated_prediction(payload, request_id=g.request_id, build_report=build_report)
         session["latest_result"] = result
         return jsonify({"ok": True, "data": result, "request_id": g.request_id}), 200
     except ValueError as exc:

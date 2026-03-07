@@ -12,6 +12,8 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 BASELINE_DATA = PROJECT_ROOT / "data" / "health_data.csv"
 FEATURES = ["age", "blood_pressure", "cholesterol"]
+_BASELINE_CACHE: BaselineStats | None = None
+_BASELINE_SIGNATURE: int | None = None
 
 
 @dataclass
@@ -46,7 +48,21 @@ def _load_baseline_stats() -> BaselineStats:
     return BaselineStats(means=means, stds=stds)
 
 
-BASELINE_STATS = _load_baseline_stats()
+def _baseline_signature() -> int:
+    if not BASELINE_DATA.exists():
+        return -1
+    return int(BASELINE_DATA.stat().st_mtime_ns)
+
+
+def _get_baseline_stats() -> BaselineStats:
+    """Cache baseline stats and refresh only when dataset changes."""
+    global _BASELINE_CACHE, _BASELINE_SIGNATURE
+
+    signature = _baseline_signature()
+    if _BASELINE_CACHE is None or signature != _BASELINE_SIGNATURE:
+        _BASELINE_CACHE = _load_baseline_stats()
+        _BASELINE_SIGNATURE = signature
+    return _BASELINE_CACHE
 
 
 def assess_prediction(
@@ -55,13 +71,14 @@ def assess_prediction(
     health_score: dict[str, Any],
 ) -> dict[str, Any]:
     """Compute drift, confidence, and consistency diagnostics."""
+    baseline_stats = _get_baseline_stats()
     z_scores: dict[str, float] = {}
     drift_flags: dict[str, bool] = {}
 
     for feature in FEATURES:
         value = float(patient_data.get(feature, 0.0))
-        mean_value = BASELINE_STATS.means.get(feature, 0.0)
-        std_value = BASELINE_STATS.stds.get(feature, 1.0)
+        mean_value = baseline_stats.means.get(feature, 0.0)
+        std_value = baseline_stats.stds.get(feature, 1.0)
 
         z_score = round((value - mean_value) / std_value, 3)
         z_scores[feature] = z_score
