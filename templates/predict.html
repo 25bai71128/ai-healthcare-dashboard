@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}{{ model_title }}{% endblock %}
+{% block content %}
+<div class="form-container">
+  <div class="form-header">
+    <h1>{{ model_title }}</h1>
+    <p>{{ model_description }}</p>
+  </div>
+  <div class="form-body">
+
+    <div id="error-banner" style="display:none;background:#FED7D7;color:#9B2C2C;padding:14px 20px;border-radius:10px;margin-bottom:20px;font-size:0.9rem"></div>
+
+    <form id="predict-form" data-model="{{ model }}">
+
+      {% if model == 'disease' %}
+      <!-- Symptom Selector -->
+      <input type="hidden" id="selected-symptoms" name="selected_symptoms" value="[]">
+      <div class="form-section-title">🦠 Select Your Symptoms</div>
+      <input class="symptom-search" id="symptom-search" type="text" placeholder="🔍 Search symptoms (e.g. headache, fever)...">
+      <div class="symptom-counter" id="symptom-counter">0 symptoms selected</div>
+      <div class="symptom-grid">
+        {% for symptom in symptoms %}
+        <div class="symptom-item" data-symptom="{{ symptom }}">
+          <div class="symptom-check"></div>
+          {{ symptom.replace('_',' ').title() }}
+        </div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button type="button" class="btn btn-outline" onclick="clearSymptoms()">✖ Clear All</button>
+        <button type="button" class="btn btn-outline" onclick="selectCommon()">⚡ Common Symptoms</button>
+      </div>
+
+      {% elif model == 'diabetes' %}
+      <!-- Quick / Detailed Mode -->
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn active" onclick="setMode('quick',this)">⚡ Quick (no lab report)</button>
+        <button type="button" class="mode-btn"        onclick="setMode('detailed',this)">🔬 Detailed (with lab report)</button>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">📋 About You</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" name="Age" id="age_input" placeholder="e.g. 35" required min="1" max="120">
+          </div>
+          <div class="form-group">
+            <label>Number of Pregnancies <span class="tip" data-tip="Enter 0 if male or never pregnant">?</span></label>
+            <input type="number" name="Pregnancies" placeholder="0" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>Weight (kg)</label>
+            <input type="number" id="weight_kg" placeholder="e.g. 70" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Height (cm)</label>
+            <input type="number" id="height_cm" placeholder="e.g. 170" step="0.1">
+          </div>
+          <div class="form-group computed-field">
+            <label>BMI <span class="computed-badge">Auto</span></label>
+            <input type="number" name="BMI" id="bmi_val" placeholder="Auto-calculated" readonly>
+          </div>
+          <div class="form-group">
+            <label>Family History of Diabetes</label>
+            <select id="dpf_helper" onchange="document.querySelector('[name=DiabetesPedigreeFunction]').value=this.value">
+              <option value="0.2">No family history</option>
+              <option value="0.4">1 distant relative</option>
+              <option value="0.6">1 close relative (parent/sibling)</option>
+              <option value="0.8">Multiple close relatives</option>
+              <option value="1.2">Both parents diabetic</option>
+            </select>
+            <input type="hidden" name="DiabetesPedigreeFunction" value="0.2">
+          </div>
+        </div>
+      </div>
+      <div class="form-section lab-section" style="display:none">
+        <div class="form-section-title">🔬 From Your Blood Test Report</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Fasting Blood Sugar (Glucose) mg/dL <span class="tip" data-tip="Normal fasting glucose: 70–99 mg/dL">?</span></label>
+            <input type="number" name="Glucose" placeholder="e.g. 120" value="100">
+            <span class="helper">Normal: 70–99 mg/dL</span>
+          </div>
+          <div class="form-group">
+            <label>Blood Pressure (Diastolic) mmHg</label>
+            <input type="number" name="BloodPressure" placeholder="e.g. 80" value="80">
+            <span class="helper">Normal: 60–80 mmHg</span>
+          </div>
+          <div class="form-group">
+            <label>Skin Fold Thickness (Triceps) mm <span class="tip" data-tip="Measured with calipers at the back of upper arm. Use 20 if not measured.">?</span></label>
+            <input type="number" name="SkinThickness" placeholder="20" value="20">
+          </div>
+          <div class="form-group">
+            <label>Insulin Level (mu U/ml) <span class="tip" data-tip="From your blood test. Normal: 16–166 mu U/ml. Use 80 if not available.">?</span></label>
+            <input type="number" name="Insulin" placeholder="80" value="80">
+          </div>
+        </div>
+      </div>
+
+      {% elif model == 'heart' %}
+      <!-- Heart Disease Form -->
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn active" onclick="setMode('quick',this)">⚡ Quick Check</button>
+        <button type="button" class="mode-btn"        onclick="setMode('detailed',this)">🔬 With Lab Report</button>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">📋 About You</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" name="age" id="age_input" placeholder="e.g. 45" required>
+          </div>
+          <div class="form-group">
+            <label>Sex</label>
+            <select name="sex">
+              <option value="1">Male</option>
+              <option value="0">Female</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Chest Pain Type</label>
+            <select name="cp">
+              <option value="0">Typical Angina — tight pressure during exercise</option>
+              <option value="1">Atypical Angina — unusual chest discomfort</option>
+              <option value="2">Non-anginal Pain — chest pain unrelated to heart</option>
+              <option value="3">Asymptomatic — no chest pain</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Exercise causes chest pain?</label>
+            <select name="exang">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Number of major vessels (0–4) <span class="tip" data-tip="Found in cardiac imaging report. Use 0 if not tested.">?</span></label>
+            <select name="ca">
+              <option value="0">0 — Not tested / Normal</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="form-section lab-section" style="display:none">
+        <div class="form-section-title">🔬 From Your Lab / ECG Report</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Resting Blood Pressure (mmHg) <span class="tip" data-tip="Normal: around 120/80 mmHg">?</span></label>
+            <input type="number" name="trestbps" value="130" placeholder="130">
+          </div>
+          <div class="form-group">
+            <label>Cholesterol (mg/dL) <span class="tip" data-tip="Total cholesterol from blood test. Normal: below 200.">?</span></label>
+            <input type="number" name="chol" value="200" placeholder="200">
+          </div>
+          <div class="form-group">
+            <label>Fasting Blood Sugar &gt; 120 mg/dL?</label>
+            <select name="fbs">
+              <option value="0">No / Not sure</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+          <div class="form-group computed-field">
+            <label>Max Heart Rate Achieved <span class="computed-badge">Auto</span></label>
+            <input type="number" name="thalach" id="thalach_field" placeholder="e.g. 150" value="150">
+            <span class="helper">Auto: 220 minus your age</span>
+          </div>
+          <div class="form-group">
+            <label>ST Depression (oldpeak) <span class="tip" data-tip="From ECG stress test. Use 0 if you don't have an ECG.">?</span></label>
+            <input type="number" name="oldpeak" step="0.1" value="0" placeholder="0.0">
+          </div>
+          <div class="form-group">
+            <label>Resting ECG Result</label>
+            <select name="restecg">
+              <option value="0">Normal</option>
+              <option value="1">ST-T Wave Abnormality</option>
+              <option value="2">Left Ventricular Hypertrophy</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ST Slope (stress test)</label>
+            <select name="slope">
+              <option value="1">Flat (most common)</option>
+              <option value="0">Upsloping</option>
+              <option value="2">Downsloping</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Thalassemia <span class="tip" data-tip="From blood disorder test. Choose Normal if not tested.">?</span></label>
+            <select name="thal">
+              <option value="2">Normal / Not tested</option>
+              <option value="1">Fixed Defect</option>
+              <option value="3">Reversible Defect</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      {% elif model == 'breast_cancer' %}
+      <div class="form-section">
+        <div class="form-section-title">🔬 Tumor Measurements</div>
+        <div class="form-grid">
+          {% for feature in breast_features %}
+          <div class="form-group">
+            <label>
+              {{ feature.replace('_',' ').title() }}
+              {% if breast_tooltips.get(feature) %}
+              <span class="tip" data-tip="{{ breast_tooltips.get(feature) }}">?</span>
+              {% endif %}
+            </label>
+            <input type="number" name="{{ feature }}" step="any" placeholder="Enter value" required>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <button type="submit" class="btn-predict">
+        <span class="btn-shimmer"></span>
+        🔍 Run Prediction
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

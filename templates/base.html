@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MediAI{% endblock %} — Intelligent Health Insights</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="particles"></div>
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="logo-icon">⚕️</div>MediAI
+  </a>
+  <span class="navbar-tagline">Intelligent Health Insights</span>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/predict/disease">Disease</a>
+    <a href="/predict/diabetes">Diabetes</a>
+    <a href="/predict/heart">Heart</a>
+    <a href="/predict/breast_cancer">Cancer</a>
+  </div>
+</nav>
+{% block content %}{% endblock %}
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loader-ring"></div>
+  <span class="loader-text">Analysing your data<span class="loader-dots"></span></span>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
