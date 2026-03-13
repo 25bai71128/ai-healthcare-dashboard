@@ -1,0 +1,31 @@
+# Reduce Docker build context size (especially important on Windows).
+
+# Git / CI
+.git
+.github
+
+# Node / Next.js
+node_modules
+.next
+.vercel
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python caches
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Local artifacts
+*.log
+.tmp
+.matplotlib
+reports
+logs

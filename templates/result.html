@@ -2,79 +2,117 @@
 {% block title %}Your Results{% endblock %}
 {% block content %}
 <div class="result-container">
+  <section id="result-banner" class="result-banner">
+    <span id="banner-icon" class="banner-icon">RESULT</span>
+    <div id="banner-result" class="banner-result">-</div>
+    <div class="banner-risk">Risk level: <span id="risk-level" class="risk-medium">Medium</span></div>
+    <div class="banner-risk">Calibrated probability: <span id="banner-confidence-range">-</span></div>
+    <div id="banner-model" class="banner-model">Predictor</div>
+    <div id="banner-disclaimer" class="banner-disclaimer">Screening support only. Consult a licensed clinician for diagnosis.</div>
+  </section>
 
-  <div id="result-banner" class="result-banner">
-    <span id="banner-icon" class="banner-icon"></span>
-    <div id="banner-result" class="banner-result"></div>
-    <div id="banner-model"  class="banner-model"></div>
-    <div class="banner-disclaimer">⚠️ For screening only — consult a doctor for diagnosis</div>
-  </div>
-
-  <!-- Action Buttons — always visible at top -->
   <div class="action-buttons">
-    <a id="btn-new"    href="/" class="btn btn-accent">🔄 New Assessment</a>
-    <a id="btn-home"   href="/" class="btn btn-outline">🏠 All Predictors</a>
-    <button id="btn-report" class="btn btn-primary">📄 Download Report</button>
+    <a id="btn-new" href="/" class="btn btn-accent">New assessment</a>
+    <a id="btn-home" href="/" class="btn btn-outline">All predictors</a>
+    <button id="btn-report" class="btn btn-primary" type="button">Download report</button>
   </div>
 
-  <!-- Charts: 2 side by side -->
   <div class="visuals-grid">
-    <div class="visual-card">
-      <h3>📊 Key Factor Analysis</h3>
+    <section class="visual-card">
+      <h3>Key factor analysis</h3>
       <div class="chart-wrap"><canvas id="chart-main"></canvas></div>
-    </div>
-    <div class="visual-card">
-      <h3>🥧 Risk Distribution</h3>
+    </section>
+
+    <section class="visual-card">
+      <h3>Risk distribution</h3>
       <div class="chart-wrap"><canvas id="chart-pie"></canvas></div>
-    </div>
+    </section>
   </div>
 
-  <!-- Gauge + Summary -->
   <div class="visuals-grid">
-    <div class="visual-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
-      <h3>🎯 Prediction Confidence</h3>
+    <section class="visual-card">
+      <h3>Transparency disclosure</h3>
+      <p id="disclosure-headline" class="disclosure-headline">-</p>
+      <ul id="disclosure-list" class="rec-list compact-list"></ul>
+    </section>
+
+    <section class="visual-card">
+      <h3>Model performance metrics</h3>
+      <div class="summary-scroll">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="metrics-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="visuals-grid">
+    <section class="visual-card">
+      <h3>Explainability</h3>
+      <p id="explainability-summary" class="disclosure-headline">Feature analysis unavailable.</p>
+      <div id="feature-contrib" class="chip-wrap"></div>
+    </section>
+
+    <section class="visual-card">
+      <h3>Input quality checks</h3>
+      <ul id="quality-list" class="rec-list compact-list"></ul>
+    </section>
+  </div>
+
+  <div class="visuals-grid">
+    <section class="visual-card visual-card-center">
+      <h3>Prediction confidence</h3>
       <div class="gauge-wrap">
         <svg class="gauge-svg" viewBox="0 0 140 140">
-          <circle class="gauge-bg" cx="70" cy="70" r="65"/>
-          <circle id="gauge-fill" class="gauge-fill" cx="70" cy="70" r="65"/>
+          <circle class="gauge-bg" cx="70" cy="70" r="65"></circle>
+          <circle id="gauge-fill" class="gauge-fill" cx="70" cy="70" r="65"></circle>
         </svg>
         <div class="gauge-center">
-          <span id="gauge-pct" class="gauge-pct">—</span>
+          <span id="gauge-pct" class="gauge-pct">0%</span>
           <span class="gauge-label">Confidence</span>
         </div>
       </div>
-    </div>
-    <div class="visual-card">
-      <h3>📋 Input Summary</h3>
-      <div style="overflow-y:auto;max-height:240px">
+    </section>
+
+    <section class="visual-card">
+      <h3>Input summary</h3>
+      <div class="summary-scroll">
         <table class="summary-table">
-          <thead><tr><th>Parameter</th><th>Your Value</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Your value</th>
+            </tr>
+          </thead>
           <tbody id="summary-tbody"></tbody>
         </table>
       </div>
-    </div>
+    </section>
   </div>
 
-  <!-- Recommendations -->
-  <div class="recommendations-card">
+  <section class="recommendations-card">
     <div class="rec-tabs">
-      <button class="rec-tab active" data-panel="rec-precautions-panel">🛡️ Precautions</button>
-      <button class="rec-tab"        data-panel="rec-recommendations-panel">💡 Recommendations</button>
+      <button class="rec-tab active" data-panel="rec-precautions-panel" type="button">Precautions</button>
+      <button class="rec-tab" data-panel="rec-recommendations-panel" type="button">Recommendations</button>
     </div>
+
     <div id="rec-precautions-panel" class="rec-panel active">
       <ul id="rec-precautions" class="rec-list"></ul>
     </div>
+
     <div id="rec-recommendations-panel" class="rec-panel">
       <ul id="rec-recommendations" class="rec-list"></ul>
     </div>
-  </div>
+  </section>
 
-  <!-- Second New Assessment CTA at bottom -->
-  <div style="text-align:center;padding:20px 0 60px">
-    <a id="btn-new-bottom" href="/" class="btn btn-accent" style="font-size:1rem;padding:16px 36px">
-      🔄 Run Another Assessment
-    </a>
+  <div class="result-bottom-cta">
+    <a id="btn-new-bottom" href="/" class="btn btn-accent">Run another assessment</a>
   </div>
-
 </div>
 {% endblock %}

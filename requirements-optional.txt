@@ -12,3 +12,4 @@ psycopg2-binary==2.9.10
 matplotlib==3.10.0
 reportlab==4.2.5
 shap==0.47.0
+lime==0.2.0.1

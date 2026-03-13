@@ -218,3 +218,37 @@ export async function askAssistant(payload: { patientId?: string; prompt: string
     body: JSON.stringify(payload),
   });
 }
+
+export async function getClusterAnalysis(patientId?: string | null) {
+  const query = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
+  return request<{
+    clustering: {
+      schema_version: number;
+      features_used: string[];
+      n_samples: number;
+      n_clusters: number;
+      pca_components: number;
+      pca_explained_variance_ratio: number[];
+      clusters: number[];
+      projection: Array<{ x: number; y: number; cluster: number; anomaly: boolean }>;
+      cluster_profiles: Record<string, Record<string, number>>;
+      anomalies: Array<{ index: number; features: Record<string, number>; cluster: number }>;
+      summary: { cluster_counts: Record<string, number>; anomaly_count: number };
+    };
+    source: { measuredAtByIndex: string[] };
+  }>(`/api/intelligence/cluster${query}`);
+}
+
+export async function getTreatmentRecommendation(patientId?: string | null) {
+  const query = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
+  return request<{
+    recommendation: {
+      recommended_treatment: string;
+      expected_outcome_score: number;
+      risk_before: number;
+      risk_after: number;
+      notes: string;
+    };
+    inputs: { measuredAt: string };
+  }>(`/api/intelligence/treatment${query}`);
+}

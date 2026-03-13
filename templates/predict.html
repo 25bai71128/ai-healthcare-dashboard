@@ -2,22 +2,33 @@
 {% block title %}{{ model_title }}{% endblock %}
 {% block content %}
 <div class="form-container">
-  <div class="form-header">
+  <header class="form-header">
     <h1>{{ model_title }}</h1>
     <p>{{ model_description }}</p>
-  </div>
-  <div class="form-body">
+  </header>
 
-    <div id="error-banner" style="display:none;background:#FED7D7;color:#9B2C2C;padding:14px 20px;border-radius:10px;margin-bottom:20px;font-size:0.9rem"></div>
+  <section class="form-body">
+    <div class="form-steps" aria-label="Prediction flow">
+      <div class="step active" data-step="1">1. Enter health data</div>
+      <div class="step" data-step="2">2. AI analysis</div>
+      <div class="step" data-step="3">3. Result display</div>
+    </div>
+
+    <div id="error-banner" class="error-banner"></div>
 
     <form id="predict-form" data-model="{{ model }}">
-
       {% if model == 'disease' %}
-      <!-- Symptom Selector -->
       <input type="hidden" id="selected-symptoms" name="selected_symptoms" value="[]">
-      <div class="form-section-title">🦠 Select Your Symptoms</div>
-      <input class="symptom-search" id="symptom-search" type="text" placeholder="🔍 Search symptoms (e.g. headache, fever)...">
+      <div class="form-section-title">Select your symptoms</div>
+
+      <input
+        class="symptom-search"
+        id="symptom-search"
+        type="text"
+        placeholder="Search symptoms (example: headache, fever)">
+
       <div class="symptom-counter" id="symptom-counter">0 symptoms selected</div>
+
       <div class="symptom-grid">
         {% for symptom in symptoms %}
         <div class="symptom-item" data-symptom="{{ symptom }}">
@@ -26,46 +37,52 @@
         </div>
         {% endfor %}
       </div>
-      <div style="display:flex;gap:10px;margin-top:16px">
-        <button type="button" class="btn btn-outline" onclick="clearSymptoms()">✖ Clear All</button>
-        <button type="button" class="btn btn-outline" onclick="selectCommon()">⚡ Common Symptoms</button>
+
+      <div class="symptom-actions">
+        <button type="button" class="btn btn-outline" onclick="clearSymptoms()">Clear all</button>
+        <button type="button" class="btn btn-outline" onclick="selectCommon()">Select common</button>
       </div>
 
       {% elif model == 'diabetes' %}
-      <!-- Quick / Detailed Mode -->
       <div class="mode-toggle">
-        <button type="button" class="mode-btn active" onclick="setMode('quick',this)">⚡ Quick (no lab report)</button>
-        <button type="button" class="mode-btn"        onclick="setMode('detailed',this)">🔬 Detailed (with lab report)</button>
+        <button type="button" class="mode-btn" onclick="setMode('quick', this)">Quick (without lab report)</button>
+        <button type="button" class="mode-btn active" onclick="setMode('detailed', this)">Detailed (with lab report)</button>
       </div>
+
       <div class="form-section">
-        <div class="form-section-title">📋 About You</div>
+        <div class="form-section-title">Patient details</div>
         <div class="form-grid">
           <div class="form-group">
-            <label>Age</label>
-            <input type="number" name="Age" id="age_input" placeholder="e.g. 35" required min="1" max="120">
+            <label>Age (years)</label>
+            <input type="number" name="Age" id="age_input" placeholder="Example: 35" required min="1" max="120">
           </div>
+
           <div class="form-group">
-            <label>Number of Pregnancies <span class="tip" data-tip="Enter 0 if male or never pregnant">?</span></label>
-            <input type="number" name="Pregnancies" placeholder="0" value="0" min="0">
+            <label>Number of pregnancies <span class="tip" data-tip="Enter 0 if not applicable.">?</span></label>
+            <input type="number" name="Pregnancies" placeholder="0" value="0" min="0" max="25">
           </div>
+
           <div class="form-group">
             <label>Weight (kg)</label>
-            <input type="number" id="weight_kg" placeholder="e.g. 70" step="0.1">
+            <input type="number" id="weight_kg" placeholder="Example: 70" step="0.1" min="1" max="300">
           </div>
+
           <div class="form-group">
             <label>Height (cm)</label>
-            <input type="number" id="height_cm" placeholder="e.g. 170" step="0.1">
+            <input type="number" id="height_cm" placeholder="Example: 170" step="0.1" min="50" max="250">
           </div>
+
           <div class="form-group computed-field">
-            <label>BMI <span class="computed-badge">Auto</span></label>
-            <input type="number" name="BMI" id="bmi_val" placeholder="Auto-calculated" readonly>
+            <label>BMI (kg/m2) <span class="computed-badge">Auto</span></label>
+            <input type="number" name="BMI" id="bmi_val" value="25" placeholder="Auto-calculated" readonly>
           </div>
+
           <div class="form-group">
-            <label>Family History of Diabetes</label>
+            <label>Family history of diabetes</label>
             <select id="dpf_helper" onchange="document.querySelector('[name=DiabetesPedigreeFunction]').value=this.value">
               <option value="0.2">No family history</option>
               <option value="0.4">1 distant relative</option>
-              <option value="0.6">1 close relative (parent/sibling)</option>
+              <option value="0.6">1 close relative (parent or sibling)</option>
               <option value="0.8">Multiple close relatives</option>
               <option value="1.2">Both parents diabetic</option>
             </select>
@@ -73,43 +90,48 @@
           </div>
         </div>
       </div>
-      <div class="form-section lab-section" style="display:none">
-        <div class="form-section-title">🔬 From Your Blood Test Report</div>
+
+      <div class="form-section lab-section">
+        <div class="form-section-title">Blood test inputs</div>
         <div class="form-grid">
           <div class="form-group">
-            <label>Fasting Blood Sugar (Glucose) mg/dL <span class="tip" data-tip="Normal fasting glucose: 70–99 mg/dL">?</span></label>
-            <input type="number" name="Glucose" placeholder="e.g. 120" value="100">
-            <span class="helper">Normal: 70–99 mg/dL</span>
+            <label>Fasting glucose (mg/dL) <span class="tip" data-tip="Normal fasting glucose is usually 70 to 99 mg/dL.">?</span></label>
+            <input type="number" name="Glucose" value="100" placeholder="Example: 95" min="0" max="500">
+            <span class="helper">Normal range: 70 to 99 mg/dL</span>
           </div>
+
           <div class="form-group">
-            <label>Blood Pressure (Diastolic) mmHg</label>
-            <input type="number" name="BloodPressure" placeholder="e.g. 80" value="80">
-            <span class="helper">Normal: 60–80 mmHg</span>
+            <label>Blood pressure, diastolic (mmHg)</label>
+            <input type="number" name="BloodPressure" value="80" placeholder="Example: 80" min="0" max="200">
+            <span class="helper">Normal range: 60 to 80 mmHg</span>
           </div>
+
           <div class="form-group">
-            <label>Skin Fold Thickness (Triceps) mm <span class="tip" data-tip="Measured with calipers at the back of upper arm. Use 20 if not measured.">?</span></label>
-            <input type="number" name="SkinThickness" placeholder="20" value="20">
+            <label>Skin fold thickness (mm) <span class="tip" data-tip="Use 20 if this value is not available.">?</span></label>
+            <input type="number" name="SkinThickness" placeholder="20" value="20" min="0" max="100">
           </div>
+
           <div class="form-group">
-            <label>Insulin Level (mu U/ml) <span class="tip" data-tip="From your blood test. Normal: 16–166 mu U/ml. Use 80 if not available.">?</span></label>
-            <input type="number" name="Insulin" placeholder="80" value="80">
+            <label>Insulin level (mu U/mL) <span class="tip" data-tip="Use 80 if this value is not available.">?</span></label>
+            <input type="number" name="Insulin" placeholder="80" value="80" min="0" max="1000">
           </div>
         </div>
       </div>
 
       {% elif model == 'heart' %}
-      <!-- Heart Disease Form -->
       <div class="mode-toggle">
-        <button type="button" class="mode-btn active" onclick="setMode('quick',this)">⚡ Quick Check</button>
-        <button type="button" class="mode-btn"        onclick="setMode('detailed',this)">🔬 With Lab Report</button>
+        <button type="button" class="mode-btn" onclick="setMode('quick', this)">Quick check</button>
+        <button type="button" class="mode-btn active" onclick="setMode('detailed', this)">With lab report</button>
       </div>
+
       <div class="form-section">
-        <div class="form-section-title">📋 About You</div>
+        <div class="form-section-title">Patient details</div>
         <div class="form-grid">
           <div class="form-group">
-            <label>Age</label>
-            <input type="number" name="age" id="age_input" placeholder="e.g. 45" required>
+            <label>Age (years)</label>
+            <input type="number" name="age" id="age_input" placeholder="Example: 45" required min="1" max="120">
           </div>
+
           <div class="form-group">
             <label>Sex</label>
             <select name="sex">
@@ -117,26 +139,29 @@
               <option value="0">Female</option>
             </select>
           </div>
+
           <div class="form-group full">
-            <label>Chest Pain Type</label>
+            <label>Chest pain type</label>
             <select name="cp">
-              <option value="0">Typical Angina — tight pressure during exercise</option>
-              <option value="1">Atypical Angina — unusual chest discomfort</option>
-              <option value="2">Non-anginal Pain — chest pain unrelated to heart</option>
-              <option value="3">Asymptomatic — no chest pain</option>
+              <option value="0">Typical angina (pressure during activity)</option>
+              <option value="1">Atypical angina (unusual discomfort)</option>
+              <option value="2">Non-anginal pain</option>
+              <option value="3">Asymptomatic</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label>Exercise causes chest pain?</label>
+            <label>Exercise-induced angina</label>
             <select name="exang">
               <option value="0">No</option>
               <option value="1">Yes</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label>Number of major vessels (0–4) <span class="tip" data-tip="Found in cardiac imaging report. Use 0 if not tested.">?</span></label>
+            <label>Number of major vessels (0 to 4) <span class="tip" data-tip="Use 0 if this value is not available.">?</span></label>
             <select name="ca">
-              <option value="0">0 — Not tested / Normal</option>
+              <option value="0">0 (not tested or normal)</option>
               <option value="1">1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -145,62 +170,71 @@
           </div>
         </div>
       </div>
-      <div class="form-section lab-section" style="display:none">
-        <div class="form-section-title">🔬 From Your Lab / ECG Report</div>
+
+      <div class="form-section lab-section">
+        <div class="form-section-title">Lab and ECG inputs</div>
         <div class="form-grid">
           <div class="form-group">
-            <label>Resting Blood Pressure (mmHg) <span class="tip" data-tip="Normal: around 120/80 mmHg">?</span></label>
-            <input type="number" name="trestbps" value="130" placeholder="130">
+            <label>Resting blood pressure (mmHg) <span class="tip" data-tip="Typical resting blood pressure is around 120/80 mmHg.">?</span></label>
+            <input type="number" name="trestbps" value="130" placeholder="130" min="50" max="250">
           </div>
+
           <div class="form-group">
-            <label>Cholesterol (mg/dL) <span class="tip" data-tip="Total cholesterol from blood test. Normal: below 200.">?</span></label>
-            <input type="number" name="chol" value="200" placeholder="200">
+            <label>Cholesterol (mg/dL) <span class="tip" data-tip="Total cholesterol is generally considered normal below 200 mg/dL.">?</span></label>
+            <input type="number" name="chol" value="200" placeholder="200" min="100" max="600">
           </div>
+
           <div class="form-group">
-            <label>Fasting Blood Sugar &gt; 120 mg/dL?</label>
+            <label>Fasting blood sugar greater than 120 mg/dL</label>
             <select name="fbs">
-              <option value="0">No / Not sure</option>
+              <option value="0">No or not sure</option>
               <option value="1">Yes</option>
             </select>
           </div>
+
           <div class="form-group computed-field">
-            <label>Max Heart Rate Achieved <span class="computed-badge">Auto</span></label>
-            <input type="number" name="thalach" id="thalach_field" placeholder="e.g. 150" value="150">
-            <span class="helper">Auto: 220 minus your age</span>
+            <label>Maximum heart rate achieved <span class="computed-badge">Auto</span></label>
+            <input type="number" name="thalach" id="thalach_field" placeholder="Example: 150" value="150" min="60" max="220">
+            <span class="helper">Auto estimate: 220 minus age</span>
           </div>
+
           <div class="form-group">
-            <label>ST Depression (oldpeak) <span class="tip" data-tip="From ECG stress test. Use 0 if you don't have an ECG.">?</span></label>
-            <input type="number" name="oldpeak" step="0.1" value="0" placeholder="0.0">
+            <label>ST depression (oldpeak) <span class="tip" data-tip="Use 0 if stress ECG value is unavailable.">?</span></label>
+            <input type="number" name="oldpeak" step="0.1" value="0" placeholder="0.0" min="0" max="10">
           </div>
+
           <div class="form-group">
-            <label>Resting ECG Result</label>
+            <label>Resting ECG result</label>
             <select name="restecg">
               <option value="0">Normal</option>
-              <option value="1">ST-T Wave Abnormality</option>
-              <option value="2">Left Ventricular Hypertrophy</option>
+              <option value="1">ST-T wave abnormality</option>
+              <option value="2">Left ventricular hypertrophy</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label>ST Slope (stress test)</label>
+            <label>ST slope (stress test)</label>
             <select name="slope">
-              <option value="1">Flat (most common)</option>
+              <option value="1">Flat</option>
               <option value="0">Upsloping</option>
               <option value="2">Downsloping</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label>Thalassemia <span class="tip" data-tip="From blood disorder test. Choose Normal if not tested.">?</span></label>
+            <label>Thalassemia <span class="tip" data-tip="Select normal if this value is unavailable.">?</span></label>
             <select name="thal">
-              <option value="2">Normal / Not tested</option>
-              <option value="1">Fixed Defect</option>
-              <option value="3">Reversible Defect</option>
+              <option value="2">Normal or not tested</option>
+              <option value="1">Fixed defect</option>
+              <option value="3">Reversible defect</option>
             </select>
           </div>
         </div>
       </div>
+
       {% elif model == 'breast_cancer' %}
       <div class="form-section">
-        <div class="form-section-title">🔬 Tumor Measurements</div>
+        <div class="form-section-title">Tumor measurements</div>
         <div class="form-grid">
           {% for feature in breast_features %}
           <div class="form-group">
@@ -219,9 +253,9 @@
 
       <button type="submit" class="btn-predict">
         <span class="btn-shimmer"></span>
-        🔍 Run Prediction
+        Run prediction
       </button>
     </form>
-  </div>
+  </section>
 </div>
 {% endblock %}

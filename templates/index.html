@@ -2,49 +2,83 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 <section class="hero">
-  <div class="hero-pill">🔬 AI-Powered Health Screening</div>
-  <h1>Predict. Understand. <em>Act.</em></h1>
-  <p>Enter your health data and get an instant AI-powered risk assessment with personalised recommendations and a downloadable report.</p>
+  <div class="hero-inner">
+    <p class="hero-kicker">AI HEALTH SCREENING</p>
+    <h1>Clear predictions for faster health decisions.</h1>
+    <p class="hero-copy">
+      MediAI helps you run quick screening checks across multiple health conditions using structured clinical inputs.
+    </p>
+    <a href="#predict-tools" class="btn btn-accent">Start Prediction</a>
+  </div>
 </section>
 
-<div class="stats-bar">
-  <div class="stat-item"><span class="stat-number">4</span><span class="stat-label">Prediction Models</span></div>
-  <div class="stat-item"><span class="stat-number">132</span><span class="stat-label">Symptoms Analysed</span></div>
-  <div class="stat-item"><span class="stat-number">~87%</span><span class="stat-label">Avg. Accuracy</span></div>
-  <div class="stat-item"><span class="stat-number">Free</span><span class="stat-label">Always</span></div>
-</div>
+<section class="stats-bar" aria-label="MediAI highlights">
+  <div class="stat-item">
+    <span class="stat-number">4</span>
+    <span class="stat-label">Prediction models</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">132</span>
+    <span class="stat-label">Symptoms analyzed</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">~87%</span>
+    <span class="stat-label">Average model accuracy</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">24/7</span>
+    <span class="stat-label">Access availability</span>
+  </div>
+</section>
 
-<div class="cards-grid">
-  <a href="/predict/disease" class="model-card" style="--card-color:#00B4A6;--card-bg:rgba(0,180,166,0.08)">
-    <div class="card-icon">🦠</div>
-    <div class="accuracy-badge"><span class="accuracy-dot"></span> High Accuracy</div>
-    <h3>Disease Predictor</h3>
-    <p>Select symptoms from 132 options and get a predicted diagnosis from 41 possible conditions.</p>
-    <span class="card-cta">Start Assessment <span class="card-cta-arrow">→</span></span>
-  </a>
-  <a href="/predict/diabetes" class="model-card" style="--card-color:#9F7AEA;--card-bg:rgba(159,122,234,0.08)">
-    <div class="card-icon">🩸</div>
-    <div class="accuracy-badge"><span class="accuracy-dot"></span> High Accuracy</div>
-    <h3>Diabetes Predictor</h3>
-    <p>Assess your risk using glucose levels, BMI, age, and lifestyle indicators.</p>
-    <span class="card-cta">Start Assessment <span class="card-cta-arrow">→</span></span>
-  </a>
-  <a href="/predict/heart" class="model-card" style="--card-color:#FF6B6B;--card-bg:rgba(255,107,107,0.08)">
-    <div class="card-icon">❤️</div>
-    <div class="accuracy-badge"><span class="accuracy-dot"></span> High Accuracy</div>
-    <h3>Heart Disease Predictor</h3>
-    <p>Evaluate cardiovascular risk using cholesterol, blood pressure, and ECG findings.</p>
-    <span class="card-cta">Start Assessment <span class="card-cta-arrow">→</span></span>
-  </a>
-  <a href="/predict/breast_cancer" class="model-card" style="--card-color:#F6AD55;--card-bg:rgba(246,173,85,0.08)">
-    <div class="card-icon">🎗️</div>
-    <div class="accuracy-badge"><span class="accuracy-dot"></span> High Accuracy</div>
-    <h3>Breast Cancer Screen</h3>
-    <p>Classify tumour characteristics as benign or malignant using 30 nucleus measurements.</p>
-    <span class="card-cta">Start Assessment <span class="card-cta-arrow">→</span></span>
-  </a>
-</div>
-<p class="home-disclaimer">
-  ⚕️ For informational purposes only. Not a substitute for professional medical advice.
-</p>
+<section id="predict-tools" class="cards-wrap">
+  <div class="cards-grid">
+    <a href="/predict/disease" class="model-card" style="--card-color:#0EA5A4;--card-bg:rgba(14,165,164,0.12)">
+      <span class="card-icon" aria-hidden="true">DS</span>
+      <div class="accuracy-badge"><span class="accuracy-dot"></span> Screening Model</div>
+      <h3>Disease Symptom Predictor</h3>
+      <p>Select symptoms and estimate the most likely disease class for early guidance.</p>
+      <span class="card-cta">Start assessment <span class="card-cta-arrow">&gt;</span></span>
+    </a>
+
+    <a href="/predict/diabetes" class="model-card" style="--card-color:#2563EB;--card-bg:rgba(37,99,235,0.10)">
+      <span class="card-icon" aria-hidden="true">DB</span>
+      <div class="accuracy-badge"><span class="accuracy-dot"></span> Screening Model</div>
+      <h3>Diabetes Predictor</h3>
+      <p>Use glucose, BMI, age, and related inputs to evaluate diabetes risk.</p>
+      <span class="card-cta">Start assessment <span class="card-cta-arrow">&gt;</span></span>
+    </a>
+
+    <a href="/predict/heart" class="model-card" style="--card-color:#DC2626;--card-bg:rgba(220,38,38,0.10)">
+      <span class="card-icon" aria-hidden="true">HD</span>
+      <div class="accuracy-badge"><span class="accuracy-dot"></span> Screening Model</div>
+      <h3>Heart Disease Predictor</h3>
+      <p>Estimate cardiovascular risk using blood pressure, cholesterol, ECG, and age factors.</p>
+      <span class="card-cta">Start assessment <span class="card-cta-arrow">&gt;</span></span>
+    </a>
+
+    <a href="/predict/breast_cancer" class="model-card" style="--card-color:#B45309;--card-bg:rgba(180,83,9,0.10)">
+      <span class="card-icon" aria-hidden="true">BC</span>
+      <div class="accuracy-badge"><span class="accuracy-dot"></span> Screening Model</div>
+      <h3>Breast Cancer Predictor</h3>
+      <p>Classify tumor measurements into benign or malignant risk categories.</p>
+      <span class="card-cta">Start assessment <span class="card-cta-arrow">&gt;</span></span>
+    </a>
+  </div>
+</section>
+
+<section id="about" class="info-section">
+  <h2>About MediAI</h2>
+  <p>
+    MediAI provides AI-assisted risk screening for educational support. It is built to help users structure health data before consulting a licensed clinician.
+  </p>
+</section>
+
+<section id="disclaimer" class="info-section info-section-last">
+  <h2>Disclaimer</h2>
+  <p>
+    MediAI is not a diagnostic tool and does not replace professional medical advice, diagnosis, or treatment.
+    Always consult a qualified healthcare provider for medical decisions.
+  </p>
+</section>
 {% endblock %}

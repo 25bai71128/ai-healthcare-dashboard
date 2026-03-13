@@ -3,6 +3,7 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CriticalAlertsPanel } from "@/components/dashboard/CriticalAlertsPanel";
 import { HealthAnalyticsSection } from "@/components/dashboard/HealthAnalyticsSection";
+import { AIIntelligenceSection } from "@/components/dashboard/AIIntelligenceSection";
 import { TimelineSection } from "@/components/dashboard/TimelineSection";
 import { AIAssistantCard } from "@/components/dashboard/AIAssistantCard";
 import { QuickVitalEntry } from "@/components/dashboard/QuickVitalEntry";
@@ -97,6 +98,8 @@ export function DashboardClient() {
           <AIAssistantCard patientId={patient.id} />
         </div>
       </div>
+
+      <AIIntelligenceSection patientId={patient.id} />
 
       <TimelineSection events={timelineEvents} />
 

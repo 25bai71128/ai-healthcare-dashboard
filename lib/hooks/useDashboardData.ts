@@ -4,12 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   askAssistant,
   createVital,
+  getClusterAnalysis,
   getAlerts,
   getAnalytics,
   getAppointments,
   getLabs,
   getMedications,
   getProfile,
+  getTreatmentRecommendation,
   getTimeline,
   getVitals,
 } from "@/lib/api/client";
@@ -95,5 +97,23 @@ export function useCreateVital() {
 export function useAssistant() {
   return useMutation({
     mutationFn: askAssistant,
+  });
+}
+
+export function useClusterAnalysis(patientId?: string | null) {
+  return useQuery({
+    queryKey: ["intelligence", "cluster", patientKey(patientId)],
+    queryFn: () => getClusterAnalysis(patientId),
+    enabled: Boolean(patientId),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useTreatmentRecommendation(patientId?: string | null) {
+  return useQuery({
+    queryKey: ["intelligence", "treatment", patientKey(patientId)],
+    queryFn: () => getTreatmentRecommendation(patientId),
+    enabled: Boolean(patientId),
+    refetchInterval: 60_000,
   });
 }

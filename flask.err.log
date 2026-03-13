@@ -1,0 +1,45 @@
+ * Tip: There are .env files present. Install python-dotenv to use them.
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator DecisionTreeClassifier from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-03-08 18:28:06,659 | WARNING | pickle.load failed for disease_symptom_model (STACK_GLOBAL requires str). Trying joblib.load...
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator RandomForestClassifier from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-03-08 18:28:06,676 | INFO | Loaded disease_symptom_model via joblib
+2026-03-08 18:28:06,677 | WARNING | pickle.load failed for disease_label_encoder (STACK_GLOBAL requires str). Trying joblib.load...
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator LabelEncoder from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-03-08 18:28:06,678 | INFO | Loaded disease_label_encoder via joblib
+2026-03-08 18:28:06,678 | INFO | Loaded disease_feature_names
+2026-03-08 18:28:06,682 | WARNING | pickle.load failed for breast_cancer_mlp (invalid load key, '\x09'.). Trying joblib.load...
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator LabelBinarizer from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator MLPClassifier from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-03-08 18:28:06,684 | INFO | Loaded breast_cancer_mlp via joblib
+2026-03-08 18:28:06,685 | WARNING | pickle.load failed for breast_cancer_scaler (invalid load key, '\x07'.). Trying joblib.load...
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator StandardScaler from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-03-08 18:28:06,685 | INFO | Loaded breast_cancer_scaler via joblib
+2026-03-08 18:28:06,685 | INFO | Loaded breast_cancer_features
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator LogisticRegression from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+C:\Users\91895\AppData\Local\Programs\Python\Python314\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator StackingClassifier from version 1.6.1 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-03-08 18:28:06,727 | INFO | Loaded diabetes_model
+2026-03-08 18:28:06,728 | INFO | Loaded diabetes_scaler
+2026-03-08 18:28:06,728 | WARNING | pickle.load failed for heart_disease_model (STACK_GLOBAL requires str). Trying joblib.load...
+2026-03-08 18:28:06,729 | INFO | Loaded heart_disease_model via joblib
+2026-03-08 18:28:06,741 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.103:5000
+2026-03-08 18:28:06,741 | INFO | [33mPress CTRL+C to quit[0m
+2026-03-08 18:28:11,202 | INFO | 127.0.0.1 - - [08/Mar/2026 18:28:11] "GET / HTTP/1.1" 200 -

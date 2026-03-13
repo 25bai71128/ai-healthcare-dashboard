@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Methodology & Disclaimer{% endblock %}
+{% block content %}
+<div class="result-container">
+  <section class="form-header">
+    <h1>Methodology & Clinical Disclaimer</h1>
+    <p>
+      MediAI is an AI screening support system. It is not a diagnostic service.
+      Predictions include uncertainty bounds and known model error rates.
+    </p>
+  </section>
+
+  <section class="form-body">
+    <div class="method-grid">
+      {% for model_key, card in model_cards.items() %}
+      <article class="method-card">
+        <h3>{{ card.info.model_name }}</h3>
+        <p><strong>Algorithm:</strong> {{ card.info.algorithm }}</p>
+        <p><strong>Training dataset:</strong> {{ card.info.training_dataset.name }} ({{ card.info.training_dataset.cases }} cases)</p>
+        <p><strong>Demographics:</strong> {{ card.info.training_dataset.demographics }}</p>
+
+        <div class="method-table-wrap">
+          <table class="summary-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Estimate (95% CI)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Accuracy</td><td>{{ '%.1f'|format(card.metrics.accuracy[0] * 100) }}% ({{ '%.1f'|format(card.metrics.accuracy[1] * 100) }}-{{ '%.1f'|format(card.metrics.accuracy[2] * 100) }}%)</td></tr>
+              <tr><td>Sensitivity</td><td>{{ '%.1f'|format(card.metrics.sensitivity[0] * 100) }}% ({{ '%.1f'|format(card.metrics.sensitivity[1] * 100) }}-{{ '%.1f'|format(card.metrics.sensitivity[2] * 100) }}%)</td></tr>
+              <tr><td>Specificity</td><td>{{ '%.1f'|format(card.metrics.specificity[0] * 100) }}% ({{ '%.1f'|format(card.metrics.specificity[1] * 100) }}-{{ '%.1f'|format(card.metrics.specificity[2] * 100) }}%)</td></tr>
+              <tr><td>AUC-ROC</td><td>{{ '%.1f'|format(card.metrics.auc_roc[0] * 100) }}% ({{ '%.1f'|format(card.metrics.auc_roc[1] * 100) }}-{{ '%.1f'|format(card.metrics.auc_roc[2] * 100) }}%)</td></tr>
+              <tr><td>False Positive Rate</td><td>{{ '%.1f'|format(card.metrics.false_positive_rate * 100) }}%</td></tr>
+              <tr><td>False Negative Rate</td><td>{{ '%.1f'|format(card.metrics.false_negative_rate * 100) }}%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <section class="legal-panel">
+      <h3>Important Clinical Notice</h3>
+      <ul class="rec-list">
+        <li data-icon="!">No result is 100% certain. Confidence is calibrated and capped to avoid false certainty.</li>
+        <li data-icon="!">False negatives can occur. A low-risk result does not rule out disease.</li>
+        <li data-icon="!">Model performance can vary across age and sex groups.</li>
+        <li data-icon="!">Always consult a licensed healthcare provider for diagnosis and treatment.</li>
+      </ul>
+    </section>
+  </section>
+</div>
+{% endblock %}
